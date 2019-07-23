@@ -23,44 +23,85 @@ namespace :jira do
 	class Exporter
 		JIRA_ENTITIES_FILE = 'entities.xml'
 
-		def initialize(xmlPath)
+		def initialize(xmlPath, connector)
+			raise "Argument error blah blah" unless connector.kind_of?(Connector)
+
 			@xml = Nokogiri::XML(File.new(xmlPath + "/" + JIRA_ENTITIES_FILE, 'r:utf-8'),nil,'utf-8'){ |c| c.noblanks }
 
 			if @xml.root.children.count < 1
 				raise "Source XML is empty!"
 			end
 
-			load_issue_types
-			# @types.each {|k, v| puts("Found issue type: [#%08d] %s" % [k, v])}
-			# puts("\n")
+			load_jira_users
 
-			load_issue_statuses
-			# @statuses.each {|k, v| puts("Found issue status: [#%08d] %s" % [k, v])}
-			# puts("\n")
-
-			load_issue_priorities
-			# @priorities.each {|k, v| puts("Found issue priority: [#%08d] %s" % [k, v])}
-			# puts("\n")
-
-			load_projects
-			# @projects.each {|k, v| puts("Found project: [#%08d] name: %s, key: %s, owner: %s" % [k, v.name, v.key, v.lead])}
-			# puts("\n")
-
-			load_issues
-			# @issues.each {|k, v| puts("Found issue: [#%08d] key: %s, creator: %s, assignee: %s" % [k, v.key, v.creator, v.assignee])}
-			# puts("\n")
-
-			load_comments
-			# @comments.each {|k, v| puts("Found comment: [#%08d] author: %s, issue: %s, created: %s" % [k, v.author, v.issue, v.created])}
-			# puts("\n")
-
-			load_attaches
-			# @comments.each {|k, v| puts("Found attache: [#%08d] author: %s, issue: %s, mimetype: %s, filename: %s, created: %s" % [k, v.author, v.issue, v.mimetype, v.filename, v.created])}
-			# puts("\n")
+			# load_issue_types
+			# # @types.each {|k, v| puts("Found issue type: [#%08d] %s" % [k, v])}
+			# # puts("\n")
+			#
+			# load_issue_statuses
+			# # @statuses.each {|k, v| puts("Found issue status: [#%08d] %s" % [k, v])}
+			# # puts("\n")
+			#
+			# load_issue_priorities
+			# # @priorities.each {|k, v| puts("Found issue priority: [#%08d] %s" % [k, v])}
+			# # puts("\n")
+			#
+			# load_projects
+			# # @projects.each {|k, v| puts("Found project: [#%08d] name: %s, key: %s, owner: %s" % [k, v.name, v.key, v.lead])}
+			# # puts("\n")
+			#
+			# load_issues
+			# # @issues.each {|k, v| puts("Found issue: [#%08d] key: %s, creator: %s, assignee: %s" % [k, v.key, v.creator, v.assignee])}
+			# # puts("\n")
+			#
+			# load_comments
+			# # @comments.each {|k, v| puts("Found comment: [#%08d] author: %s, issue: %s, created: %s" % [k, v.author, v.issue, v.created])}
+			# # puts("\n")
+			#
+			# load_attaches
+			# # @comments.each {|k, v| puts("Found attache: [#%08d] author: %s, issue: %s, mimetype: %s, filename: %s, created: %s" % [k, v.author, v.issue, v.mimetype, v.filename, v.created])}
+			# # puts("\n")
+			
+			@connector = connector
 		end
 
 		def migrate
+			migrate_users
+		end
 
+		def load_jira_users
+			@users = {}
+
+			get_list_from_tag('/*/User', :id, :userName, :emailAddress, :firstName, :lastName, ).each do |v|
+				@users[v['id']] = {:login => v['userName'],
+					:mail => v['emailAddress'], :firstname => v['firstName'], :lastname => v['lastName']}
+			end
+		end
+
+		def migrate_users
+			@user_binding = {}
+			redmine_users = @connector.users
+
+			@users.each do |id, info|
+				puts "[JIRA] Found user: %s" % info[:mail]
+
+				redmine_user = redmine_users.select{|v| v[:mail] == info[:mail] }.first
+				if redmine_user != nil
+					puts "[Redmine] User already exists: %s" % redmine_user[:mail]
+				else
+					redmine_user = @connector.create_user info
+
+					if redmine_user == nil
+						raise "[Error] Can't create user: %s" % email
+					end
+
+					puts "[Redmine] Created user: %s" % redmine_user[:mail]
+				end
+
+				@user_binding[id] = redmine_user[:id]
+			end
+
+			@user_binding.each {|k, v| p "%s: %s" % [k, v]}
 		end
 
 		def load_issue_types

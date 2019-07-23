@@ -1,5 +1,6 @@
 require './lib/jira/exporter'
 require './lib/redmine/connector'
+# require './lib/redmine/accessor/users'
 
 task :export do
 	options = {
@@ -23,8 +24,9 @@ task :export do
 		raise "Invalid REDMINE API key!"
 	end
 
-	Redmine = Connector.new({:url => options[:REDMINE_URL], :key => options[:REDMINE_KEY]})
-	Redmine.execute(:users)
-
-	#Exporter.new(options[:JIRA_XML]).migrate
+	Exporter.new(options[:JIRA_XML],
+	 	Connector.new({
+			:url => options[:REDMINE_URL],
+			:key => options[:REDMINE_KEY]
+	  })).migrate
 end

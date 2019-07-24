@@ -17,8 +17,8 @@ namespace :redmine do
 			end
 		end
 
-		def select(type, *attributes)
-			response = HTTParty.get(@url + "%s.json" % type.to_s,
+		def select(uri, type, *attributes)
+			response = HTTParty.get(@url + "%s.json" % uri,
 				:headers => {"X-Redmine-API-Key" => @key, "Content-Type": "application/json"})
 
 			if response.code != 200
@@ -28,8 +28,10 @@ namespace :redmine do
 			return filter JSON.parse(response.body, symbolize_names: true), type, *attributes
 		end
 
-		def insert(type, values, *attributes)
-			response = HTTParty.post(@url + "%s.json" % type.to_s, :query => values,
+		def insert(uri, values)
+			p @url + "%s.json" % uri
+
+			response = HTTParty.post(@url + "%s.json" % uri, :query => values,
 				 :headers => {"X-Redmine-API-Key" => @key, "Content-Type" => "application/json"})
 
 			if response.code != 201
@@ -37,6 +39,18 @@ namespace :redmine do
 			end
 
 			return JSON.parse(response.body, symbolize_names: true)
+		end
+
+		def update(uri, values)
+			response = HTTParty.put(@url + "%s.json" % uri, :query => values,
+				 :headers => {"X-Redmine-API-Key" => @key, "Content-Type" => "application/json"})
+
+			if response.code != 200
+				p response.code
+				p response.body
+
+				raise "[Error: %s] Can't reach the API!" % response.code
+			end
 		end
 
 		def filter(data, type, *attributes)
@@ -56,12 +70,52 @@ namespace :redmine do
 			end
 		end
 
+		def statuses
+			return select "/issue_statuses", :issue_statuses, :id, :name
+		end
+
+		def trackers
+			return select "/trackers", :trackers, :id, :name
+		end
+
+		def priorities
+			return select "/enumerations/issue_priorities", :issue_priorities, :id, :name
+		end
+
 		def users
-			return select :users, :id, :mail
+			return select "/users", :users,:id, :mail
+		end
+
+		def projects
+			return select "/projects", :projects,:id, :name, :identifier
+		end
+
+		def roles
+			return select "/roles", :roles,:id, :name
+		end
+
+		def memberships(id)
+			return  (select "/projects/%s/memberships" % id, :memberships, :user ).map {|v| v[:user][:id]}
 		end
 
 		def create_user(data)
-			return filter insert( :users, {:user => data}, :id, :mail), :user, :id, :mail
+			return filter insert( "/users", {:user => data}), :user, :id, :mail
+		end
+
+		def create_project(data)
+			return filter insert( "/projects", {:project => {:name => data[:name], :identifier => data[:key].downcase}}), :project, :id, :name, :identifier
+		end
+
+		def create_issue(data)
+			return  filter insert( "/issues", {:issue => data}), :issue, :id
+		end
+
+		def create_membership(project, data)
+			return filter insert("/projects/%s/memberships" % project, {:membership => data}), :membership, :id
+		end
+
+		def update_issue(id, data)
+			update( "/issues/%s" % id, {:issue => data})
 		end
 
 		private :select, :insert, :filter

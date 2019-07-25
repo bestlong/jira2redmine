@@ -1,5 +1,6 @@
 require 'nokogiri'
 require 'digest'
+require 'base64'
 require 'fileutils'
 require 'active_record'
 
@@ -268,17 +269,6 @@ namespace :jira do
 			@issues.each do |id, info|
 				puts "[JIRA] Found issue: %s" % info.key
 
-				# issue_project = @projects.select {|_, v| v.key = info.key }
-				# comments = @comments.select {|_k, v| v.issue == id }
-				# if comments.length < 1
-				# 	next
-				# end
-
-				# attaches = @attaches.select {|_k, v| v.issue == id }
-				# if attaches.length < 1
-				# 	next
-				# end
-
 				data = {
 					:project_id => @projects_binding[info.project],
 					:tracker_id => @trackers_binding[info.type],
@@ -297,6 +287,19 @@ namespace :jira do
 					:created => info.created,
 					:updated => info.updated,
 				})
+
+				comments = @comments.select {|_k, v| v.issue == id }
+				if comments.length > 0
+					comments.each do |cid, cinfo|
+
+						comment_user = @user_binding[(@users.select {|_k, u| u[:login] == cinfo.author}.first)[0]]
+						@builder.create_history_event_comment(redmine_issue[:id], {
+							:user_id => comment_user,
+							:body => Base64.encode64(cinfo.body),
+							:created => cinfo.created,
+						})
+					end
+				end
 
 				attaches = @attaches.select {|_k, v| v.issue == id }
 				if attaches.length > 0
@@ -385,12 +388,6 @@ namespace :jira do
 						end
 					end
 				end
-
-				# if comments.length > 0
-				# 	comments.each do |c|
-				# 		@connector.update({:notes => []})
-				# 	end
-				# end
 
 				puts "[Redmine API] Created issue: %s" % info.summary
 				@issues_binding[id] = redmine_issue[:id]

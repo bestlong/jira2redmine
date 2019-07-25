@@ -26,6 +26,10 @@ namespace :jira do
 			store("INSERT INTO `journal_details` (`journal_id`, `property`, `prop_key`, `value`) VALUES (LAST_INSERT_ID(), 'attachment', @PROP_KEY, '%s');" % [data[:name]]);
 		end
 
+		def create_history_event_comment(id, data)
+			store("INSERT INTO `journals` (`journalized_id`, `journalized_type`, `user_id`, `notes`, `created_on`) VALUES (%s, 'Issue', %s, FROM_BASE64('%s'), TIMESTAMP('%s'));" % [id, data[:user_id], data[:body], data[:created]])
+		end
+
 		private :store
 	end
 end

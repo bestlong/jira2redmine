@@ -6,11 +6,11 @@ The easiest way to migrate data from JIRA v8.1 into redmine 4.0.4.
 * **Project:**  
 * **Project members role**  
 * **Issues**  
-* **Issues History**  
+* **Issues history**  
 
 ## Not supported
-* **custom fields**  
-* **workflow**
+* **Custom fields**  
+* **Workflow**
 
 
 ## Environment

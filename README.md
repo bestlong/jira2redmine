@@ -38,5 +38,3 @@ The Redmine API will be used as far as possible.
 The attachments file will be stored into the output directory - just copy in into ``./redmine/files/`` folder.   
 
 The ``mirgation.sql`` script has to be used on the Redmine database to finish the migration.  
-
-LICENSE

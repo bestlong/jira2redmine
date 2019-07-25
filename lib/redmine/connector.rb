@@ -29,8 +29,6 @@ namespace :redmine do
 		end
 
 		def insert(uri, values)
-			p @url + "%s.json" % uri
-
 			response = HTTParty.post(@url + "%s.json" % uri, :query => values,
 				 :headers => {"X-Redmine-API-Key" => @key, "Content-Type" => "application/json"})
 

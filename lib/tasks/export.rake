@@ -1,6 +1,5 @@
 require './lib/jira/exporter'
 require './lib/redmine/connector'
-# require './lib/redmine/accessor/users'
 
 task :export do
 	options = {
@@ -8,6 +7,7 @@ task :export do
 		:JIRA_FILES => Dir.getwd,
 		:REDMINE_URL => nil,
 		:REDMINE_KEY => nil,
+		:SQL_OUTPUT => nil,
 	}
 
 	ENV.each do |n, v|
@@ -24,9 +24,13 @@ task :export do
 		raise "Invalid REDMINE API key!"
 	end
 
+	if (options[:SQL_OUTPUT] == nil)
+		raise "Invalid output path!"
+	end
+
 	Exporter.new(options[:JIRA_XML],
 	 	Connector.new({
 			:url => options[:REDMINE_URL],
-			:key => options[:REDMINE_KEY]
-	  })).migrate
+			:key => options[:REDMINE_KEY],
+	  }), options[:SQL_OUTPUT]).migrate
 end

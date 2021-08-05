@@ -30,7 +30,11 @@ The easiest way to migrate data from JIRA v8.1 into redmine 4.0.4.
 
 ## How to
 
+```shell
+cp .env.example .env
 ```
+
+```shell
 rake export
 ```
 

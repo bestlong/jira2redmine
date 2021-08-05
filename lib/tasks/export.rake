@@ -1,6 +1,7 @@
 require './lib/jira/exporter'
 require './lib/redmine/connector'
 
+desc "Export Jira to Redmine"
 task :export do
 	options = {
 		:JIRA_XML => Dir.getwd,
@@ -28,9 +29,12 @@ task :export do
 		raise "Invalid output path!"
 	end
 
-	Exporter.new(options[:JIRA_XML],
+	Exporter.new(
+		options[:JIRA_XML],
 	 	Connector.new({
 			:url => options[:REDMINE_URL],
 			:key => options[:REDMINE_KEY],
-	  }), options[:SQL_OUTPUT]).migrate
+	    }),
+		options[:SQL_OUTPUT]
+	).migrate
 end

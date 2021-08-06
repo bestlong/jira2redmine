@@ -1,5 +1,6 @@
 require './lib/jira/exporter'
 require './lib/redmine/connector'
+require 'dotenv/load'
 
 desc "Export Jira to Redmine"
 task :export do
